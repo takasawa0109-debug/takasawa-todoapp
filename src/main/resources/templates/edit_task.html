@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>タスク編集</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 40px;
+    }
+	
+	h1 {
+	  color: #BA7D8A;
+	  margin-bottom: 20px;
+	  font-weight: 800;
+	}
+	
+    input, textarea {
+	  font-family: sans-serif;
+      width: 300px;
+      padding: 8px;
+      margin: 6px 0;
+    }
+	
+	button {
+	  color: #444444;
+	  font-size: 15px;
+	  font-weight: bold;
+	  background-color: #F2DFDF;
+	  border: none;
+	  padding: 10px 15px;
+	  border-radius: 8px;
+	  cursor: pointer;
+	  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	  transition: 0.2s;
+	}
+
+	button:hover {
+	  transform: scale(1.05);
+	}
+
+	
+	.back-btn {
+	font-size: 30px;
+	text-decoration: none;
+	}
+	
+  </style>
+</head>
+
+<body>
+
+  <h1>タスク編集</h1>
+
+  <form th:action="@{'/tasks/' + ${task.id} + '/update'}" method="post">
+    <input type="text" th:field="*{task.title}" placeholder="タイトル" required><br>
+    <textarea th:field="*{task.description}" placeholder="詳細" required></textarea><br>
+    <button type="submit">OK</button>
+  </form>
+
+  <br>
+  <a href="/tasks" class="back-btn">🔙</a>
+
+</body>
+</html>

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>ToDoアプリ</title>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 30px;
+      text-align: center;
+    }
+	
+	h1 {
+	  color: #BA7D8A;
+	  margin-bottom: 20px;
+	  font-weight: 800;
+	    }
+		
+	thead {
+		background-color: #BA7D8A;
+		color: white;
+	}
+
+    /* フォーム */
+    .task-form {
+      width: 300px;
+      margin: 20px auto;
+      text-align: left;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+      width: 100%;
+      font-size: 14px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    .form-group textarea {
+      height: 50px;
+      resize: vertical;
+    }
+
+    .task-form button {
+      padding: 6px 12px;
+      font-size: 14px;
+	  font-weight: bold;
+	  color: #444444;
+      cursor: pointer;
+      display: block;
+      margin: 10px auto 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 5px;
+      border: 1px solid #ccc;
+      text-align: center;
+      vertical-align: middle;
+    }
+	
+	button {
+	  background-color: #F2DFDF;
+	  border: none;
+	  padding: 6px 12px;
+	  border-radius: 8px;
+	  cursor: pointer;
+	  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	  transition: 0.2s;
+	}
+
+	button:hover {
+	  transform: scale(1.05);
+	}
+	
+
+    /* ドラッグ用ハンドル */
+    .drag-handle {
+      cursor: grab;
+      font-size: 20px;
+      width: 30px;
+      user-select: none;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .details {
+      display: none;
+      color: #555;
+      margin-top: 4px;
+      font-size: 0.9em;
+    }
+
+	.toggle-btn {
+	  padding: 0 4px;
+	  border: none;
+	  background: none;
+	  cursor: pointer;
+	  font-size: 12px;
+	  line-height: 1;
+	  color: #BA7D8A;
+	}
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 完了/未完了スタイル */
+    tr.incomplete {
+      background-color: white;
+      color: #000;
+    }
+
+    tr.completed {
+      background-color: #999999;
+      color: #555;
+    }
+
+    tr.completed span {
+      text-decoration: line-through;
+    }
+  </style>
+
+  <!-- SortableJS -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+  <h1>ToDo</h1>
+
+  <!-- 新規追加フォーム -->
+  <form th:action="@{/tasks}" method="post" th:object="${newTask}" class="task-form">
+    <div class="form-group">
+      <input type="text" id="title" th:field="*{title}" placeholder="タイトルを入力" required>
+    </div>
+
+    <div class="form-group">
+      <textarea id="description" th:field="*{description}" placeholder="詳細を入力" required></textarea>
+    </div>
+
+    <button type="submit">︎タスクを追加︎</button>
+  </form>
+
+  <!-- タスク一覧テーブル -->
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>完了</th>
+        <th>タイトル</th>
+        <th>作成日時</th>
+        <th>削除/編集</th>
+      </tr>
+    </thead>
+
+    <tbody id="task-table-body">
+      <tr th:each="task : ${tasks}" th:attr="data-id=${task.id}"
+          th:class="${task.completed} ? 'completed' : 'incomplete'">
+        <td class="drag-handle">⣿</td>
+
+        <td>
+          <form th:if="${!task.completed}" class="complete-form" method="post">
+            <button type="button" class="complete-btn">✔️</button>
+          </form>
+          <form th:if="${task.completed}" class="uncomplete-form" method="post">
+            <button type="button" class="uncomplete-btn">↩</button>
+          </form>
+        </td>
+
+        <td>
+          <span th:text="${task.title}"></span>
+          <button class="toggle-btn" onclick="toggleDetails(this)">▼</button>
+          <div class="details" th:text="${task.description}"></div>
+        </td>
+
+        <td th:text="${#temporals.format(task.createdAt, 'yyyy/MM/dd HH:mm')}"></td>
+
+        <td>
+          <div class="action-buttons">
+            <form th:action="@{'/tasks/' + ${task.id} + '/delete'}" method="post">
+              <button type="submit">🗑</button>
+            </form>
+            <form th:action="@{'/tasks/' + ${task.id} + '/edit'}" method="get">
+              <button type="submit">🖊️</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 詳細表示スクリプト -->
+  <script>
+    function toggleDetails(btn) {
+      const details = btn.nextElementSibling;
+      const visible = details.style.display === 'block';
+      details.style.display = visible ? 'none' : 'block';
+      btn.textContent = visible ? '▼' : '▲';
+    }
+  </script>
+
+  <!-- 並び替え処理 -->
+  <script>
+    const tbody = document.getElementById("task-table-body");
+    Sortable.create(tbody, {
+      animation: 150,
+      handle: ".drag-handle",
+      onEnd: function () {
+        const order = [];
+        document.querySelectorAll("#task-table-body tr").forEach(row => {
+          order.push(row.getAttribute("data-id"));
+        });
+
+        fetch("/tasks/reorder", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(order)
+        });
+      }
+    });
+
+    // 完了/未完了ボタン処理（イベント委譲）
+    tbody.addEventListener("click", function(e) {
+      const target = e.target;
+      const row = target.closest("tr");
+      if (!row) return;
+
+      // 完了ボタン
+      if (target.classList.contains("complete-btn")) {
+        row.classList.remove("incomplete");
+        row.classList.add("completed");
+
+        fetch("/tasks/" + row.dataset.id + "/complete", { method: "POST" })
+          .catch(err => console.error(err));
+
+        // ボタン切替
+        const uncompleteBtn = document.createElement("button");
+        uncompleteBtn.textContent = "↩";
+        uncompleteBtn.className = "uncomplete-btn";
+        target.replaceWith(uncompleteBtn);
+      }
+
+      // 未完了ボタン
+      if (target.classList.contains("uncomplete-btn")) {
+        row.classList.remove("completed");
+        row.classList.add("incomplete");
+
+        fetch("/tasks/" + row.dataset.id + "/uncomplete", { method: "POST" })
+          .catch(err => console.error(err));
+
+        // ボタン切替
+        const completeBtn = document.createElement("button");
+        completeBtn.textContent = "✔️";
+        completeBtn.className = "complete-btn";
+        target.replaceWith(completeBtn);
+      }
+    });
+  </script>
+</body>
+</html>
