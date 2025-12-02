@@ -1,4 +1,4 @@
-# --- Build（アプリを作る工程） ---
+# --- Build（アプリを作る） ---
 FROM maven:3.9.0-eclipse-temurin-17 AS builder
 WORKDIR /app
 
@@ -8,8 +8,8 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 
-# --- Run（アプリを走らせる工程） ---
-FROM eclipse-temurin:17-jdk-slim
+# --- Run（アプリを動かす） ---
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar
